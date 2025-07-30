@@ -1,5 +1,6 @@
 flask
 python-dotenv
-pdfminer.six
-google-generativeai
 fpdf
+google-generativeai
+werkzeug
+PyPDF2  # if you're using this in pdf_utils
