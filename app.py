@@ -1,24 +1,24 @@
 import os
-import google.generativeai as genai
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_file
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from utils.pdf_utils import extract_text_from_pdf
 from utils.mcq_utils import remove_duplicate_mcqs
-from flask import send_file
 from fpdf import FPDF
+import google.generativeai as genai
 
-
-# Load .env and configure API
+# Load environment variables
 load_dotenv()
+
+# Configure Google Gemini API
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Flask setup
+# Flask app setup
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'temp'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# MCQ Generation
+# Generate MCQs using Gemini
 def generate_mcqs_with_gemini(text, num_questions):
     model = genai.GenerativeModel(model_name="models/gemini-2.0-flash")
     prompt = f"""
@@ -40,39 +40,42 @@ B) ...
 C) ...
 D) ...
 Answer: ...
-    """
+"""
     response = model.generate_content(prompt)
     raw_mcqs = response.text.strip()
     unique_mcqs = remove_duplicate_mcqs(raw_mcqs)
     return unique_mcqs
 
+# Home page
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# Handle PDF upload and MCQ generation
 @app.route('/upload', methods=['POST'])
 def upload_pdf():
-    file = request.files['pdf']
-    num_questions = int(request.form['num_questions'])
+    file = request.files.get('pdf')
+    num_questions = int(request.form.get('num_questions', 5))
 
-    if file:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+    if not file:
+        return "No file uploaded", 400
 
-        text = extract_text_from_pdf(filepath)
-        mcqs = generate_mcqs_with_gemini(text, num_questions)
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(filepath)
 
-        return render_template('index.html', mcqs=mcqs)
+    text = extract_text_from_pdf(filepath)
+    mcqs = generate_mcqs_with_gemini(text, num_questions)
 
-    return "File upload failed!", 400
+    return render_template('index.html', mcqs=mcqs)
+
+# Download generated MCQs as PDF
 @app.route('/download_mcqs')
 def download_mcqs():
     mcqs_text = request.args.get('mcqs', '')
     if not mcqs_text:
         return "No MCQs to download", 400
 
-    # Generate PDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -86,6 +89,4 @@ def download_mcqs():
 
     return send_file(output_path, as_attachment=True)
 
-
-if __name__ == '__main__':
-    app.run(debug=True)
+# No app.run() needed for Vercel
