@@ -6,19 +6,18 @@ from utils.pdf_utils import extract_text_from_pdf
 from utils.mcq_utils import remove_duplicate_mcqs
 from fpdf import FPDF
 import google.generativeai as genai
+import sys
 
 # Load environment variables
 load_dotenv()
 
-# Configure Google Gemini API
+# Configure Gemini
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Flask app setup
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'temp'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Generate MCQs using Gemini
 def generate_mcqs_with_gemini(text, num_questions):
     model = genai.GenerativeModel(model_name="models/gemini-2.0-flash")
     prompt = f"""
@@ -46,47 +45,56 @@ Answer: ...
     unique_mcqs = remove_duplicate_mcqs(raw_mcqs)
     return unique_mcqs
 
-# Home page
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Handle PDF upload and MCQ generation
 @app.route('/upload', methods=['POST'])
 def upload_pdf():
-    file = request.files.get('pdf')
-    num_questions = int(request.form.get('num_questions', 5))
+    try:
+        file = request.files.get('pdf')
+        num_questions = int(request.form.get('num_questions', 5))
 
-    if not file:
-        return "No file uploaded", 400
+        if not file:
+            return "No file uploaded", 400
 
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
 
-    text = extract_text_from_pdf(filepath)
-    mcqs = generate_mcqs_with_gemini(text, num_questions)
+        text = extract_text_from_pdf(filepath)
+        mcqs = generate_mcqs_with_gemini(text, num_questions)
 
-    return render_template('index.html', mcqs=mcqs)
+        return render_template('index.html', mcqs=mcqs)
+    except Exception as e:
+        print("Upload error:", e, file=sys.stderr)
+        return "Error processing the PDF", 500
 
-# Download generated MCQs as PDF
 @app.route('/download_mcqs')
 def download_mcqs():
-    mcqs_text = request.args.get('mcqs', '')
-    if not mcqs_text:
-        return "No MCQs to download", 400
+    try:
+        mcqs_text = request.args.get('mcqs', '')
+        if not mcqs_text:
+            return "No MCQs to download", 400
 
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font("Arial", size=12)
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.set_font("Arial", size=12)
 
-    for line in mcqs_text.split('\n'):
-        pdf.multi_cell(0, 10, line)
+        for line in mcqs_text.split('\n'):
+            pdf.multi_cell(0, 10, line)
 
-    output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'generated_mcqs.pdf')
-    pdf.output(output_path)
+        output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'generated_mcqs.pdf')
+        pdf.output(output_path)
 
-    return send_file(output_path, as_attachment=True)
+        return send_file(output_path, as_attachment=True)
+    except Exception as e:
+        print("PDF download error:", e, file=sys.stderr)
+        return "Error generating PDF", 500
 
-# No app.run() needed for Vercel
+# Global error handler
+@app.errorhandler(Exception)
+def handle_exception(e):
+    print("Global error:", e, file=sys.stderr)
+    return "Something went wrong", 500
