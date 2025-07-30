@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF to MCQ Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        #mcq-text {
+            user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Upload PDF to Generate MCQs</h1>
+    <form method="POST" action="/upload" enctype="multipart/form-data">
+        <input type="file" name="pdf" accept=".pdf" required>
+        <label for="num_questions">Number of Questions:</label>
+        <input type="number" name="num_questions"  >
+        <input type="submit" value="Generate MCQs">
+    </form>
+
+    {% if mcqs %}
+    <h2>Generated MCQs:</h2>
+    <pre id="mcq-text">{{ mcqs }}</pre>
+
+    <form action="/download_mcqs" method="get">
+        <input type="hidden" name="mcqs" value="{{ mcqs|e }}">
+        <button type="submit">📥 Download as PDF</button>
+    </form>
+    {% endif %}
+</div>
+
+<script>
+    const mcq = document.getElementById("mcq-text");
+
+    // Disable right-click on MCQ
+    document.addEventListener("contextmenu", function (e) {
+        if (e.target === mcq || mcq.contains(e.target)) {
+            e.preventDefault();
+            alert("Right-click is disabled!");
+        }
+    });
+
+    // Block Ctrl+C
+    document.addEventListener("keydown", function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+            if (document.activeElement === mcq || mcq.contains(document.activeElement)) {
+                e.preventDefault();
+                alert("Copying is disabled!");
+            }
+        }
+    });
+
+    // Block Ctrl+P (print)
+    document.addEventListener("keydown", function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
+            e.preventDefault();
+            alert("Printing is disabled on this page!");
+        }
+    });
+
+</script>
+</body>
+</html>

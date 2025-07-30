@@ -1,0 +1,125 @@
+/* Base styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    background: #fff;
+    max-width: 600px;
+    width: 100%;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Heading */
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 25px;
+}
+
+/* Form styling */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+input[type="file"],
+input[type="number"],
+input[type="submit"] {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    width: 100%;
+}
+
+input[type="submit"] {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+/* MCQ display */
+h2 {
+    margin-top: 30px;
+    color: #1e272e;
+}
+
+pre {
+    background-color: #f0f0f0;
+    padding: 15px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    overflow-x: auto;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+    }
+
+    input[type="file"],
+    input[type="number"],
+    input[type="submit"] {
+        font-size: 14px;
+    }
+}.context-menu {
+    position: absolute;
+    display: none;
+    background-color: white;
+    border: 1px solid #ddd;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    width: 160px;
+    font-family: sans-serif;
+}
+
+.context-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 8px 0;
+}
+
+.context-menu ul li {
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+.context-menu ul li:hover {
+    background-color: #f2f2f2;
+}
+ body {
+        -webkit-print-color-adjust: exact;
+    }
+
+    @media print {
+        body {
+            display: none;
+        }
+    }
+
+    /* Optional: Hide MCQ text from screen capture tools that rely on overlay detection */
+    #mcq-text::selection {
+        background: transparent;
+    }
