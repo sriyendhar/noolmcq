@@ -1,14 +1,15 @@
 import os
 import tempfile
-import google.generativeai as genai
-from flask import Flask, request, render_template, send_file
+from flask import Flask, request, render_template, send_file, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
+from fpdf import FPDF
+import google.generativeai as genai
+
 from utils.pdf_utils import extract_text_from_pdf
 from utils.mcq_utils import remove_duplicate_mcqs
-from fpdf import FPDF
 
-# Load environment variables and configure Gemini API
+# Load environment variables
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 
@@ -19,11 +20,16 @@ genai.configure(api_key=api_key)
 
 # Flask setup
 app = Flask(__name__)
-
-# Use OS temporary folder to avoid read-only file system errors
+app.secret_key = 'mcq-secret-key'
 app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  # 1MB file limit
 
-# MCQ Generation Function
+# Error for large files
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return "Error: Uploaded file is too large. Maximum allowed size is 1MB.", 413
+
+# MCQ Generation using Gemini
 def generate_mcqs_with_gemini(text, num_questions):
     model = genai.GenerativeModel(model_name="models/gemini-2.0-flash")
 
@@ -46,7 +52,7 @@ B) ...
 C) ...
 D) ...
 Answer: ...
-    """
+"""
     try:
         response = model.generate_content(prompt)
         raw_mcqs = response.text.strip()
@@ -55,6 +61,7 @@ Answer: ...
     except Exception as e:
         return f"Error generating MCQs: {str(e)}"
 
+# Routes
 @app.route('/')
 def index():
     return render_template('index.html', mcqs=None)
@@ -63,19 +70,28 @@ def index():
 def upload_pdf():
     try:
         file = request.files['pdf']
-        num_questions = int(request.form['num_questions'])
+        num_questions = request.form.get('num_questions', '')
 
         if not file or file.filename == '':
             return "No file uploaded!", 400
 
+        # Validate number of questions
+        if not num_questions.isdigit() or int(num_questions) <= 0:
+            return "Invalid number of questions", 400
+
+        num_questions = int(num_questions)
+
+        # Save PDF
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
+        # Extract text from PDF
         text = extract_text_from_pdf(filepath)
         if not text.strip():
             return "PDF text extraction failed or returned empty content", 400
 
+        # Generate MCQs
         mcqs = generate_mcqs_with_gemini(text, num_questions)
         return render_template('index.html', mcqs=mcqs)
 
@@ -105,5 +121,6 @@ def download_mcqs():
     except Exception as e:
         return f"PDF Generation Error: {str(e)}", 500
 
+# Run
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=True)
+    app.run(debug=True)
