@@ -16,12 +16,12 @@
 <body>
 <div class="container">
     <h1>Upload PDF to Generate MCQs</h1>
-    <form method="POST" action="/upload" enctype="multipart/form-data">
-        <input type="file" name="pdf" accept=".pdf" required>
-        <label for="num_questions">Number of Questions:</label>
-        <input type="number" name="num_questions"  >
-        <input type="submit" value="Generate MCQs">
-    </form>
+ <form method="POST" action="/upload" enctype="multipart/form-data" id="pdf-form">
+    <input type="file" name="pdf" id="pdf" accept=".pdf" required>
+    <label for="num_questions">Number of Questions:</label>
+    <input type="number" name="num_questions">
+    <input type="submit" value="Generate MCQs">
+</form>
 
     {% if mcqs %}
     <h2>Generated MCQs:</h2>
@@ -60,6 +60,14 @@
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
             e.preventDefault();
             alert("Printing is disabled on this page!");
+        }
+    });
+    document.getElementById('pdf-form').addEventListener('submit', function (e) {
+        const fileInput = document.getElementById('pdf');
+        const file = fileInput.files[0];
+        if (file && file.size > 1 * 1024 * 1024) { // 1MB = 1024*1024 bytes
+            e.preventDefault();
+            alert("File size must be less than or equal to 1MB!");
         }
     });
 
