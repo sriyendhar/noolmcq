@@ -1,4 +1,5 @@
 import os
+import tempfile
 import google.generativeai as genai
 from flask import Flask, request, render_template, send_file
 from werkzeug.utils import secure_filename
@@ -18,13 +19,14 @@ genai.configure(api_key=api_key)
 
 # Flask setup
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'temp'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# MCQ Generation
+# Use OS temporary folder to avoid read-only file system errors
+app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
+
+# MCQ Generation Function
 def generate_mcqs_with_gemini(text, num_questions):
     model = genai.GenerativeModel(model_name="models/gemini-2.0-flash")
-    
+
     prompt = f"""
 You are an exam question generator.
 
@@ -45,7 +47,6 @@ C) ...
 D) ...
 Answer: ...
     """
-    
     try:
         response = model.generate_content(prompt)
         raw_mcqs = response.text.strip()
@@ -71,15 +72,13 @@ def upload_pdf():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Extract text
         text = extract_text_from_pdf(filepath)
         if not text.strip():
             return "PDF text extraction failed or returned empty content", 400
 
-        # Generate MCQs
         mcqs = generate_mcqs_with_gemini(text, num_questions)
         return render_template('index.html', mcqs=mcqs)
-    
+
     except Exception as e:
         return f"Server Error: {str(e)}", 500
 
@@ -102,10 +101,9 @@ def download_mcqs():
         pdf.output(output_path)
 
         return send_file(output_path, as_attachment=True)
-    
+
     except Exception as e:
         return f"PDF Generation Error: {str(e)}", 500
-
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)
