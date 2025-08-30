@@ -4,104 +4,8 @@
   <meta charset="UTF-8">
   <title>PDF to MCQ Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;600&display=swap" rel="stylesheet">
-
-  <!-- External CSS -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-  <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      background: #f4f7fb;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      background: #fff;
-      padding: 25px 30px;
-      border-radius: 12px;
-      box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 500px;
-      text-align: center;
-    }
-
-    h1 {
-      color: #2c3e50;
-      margin-bottom: 20px;
-      font-size: 22px;
-    }
-
-    input[type="file"],
-    input[type="number"] {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      outline: none;
-      transition: border 0.3s;
-    }
-
-    input[type="file"]:focus,
-    input[type="number"]:focus {
-      border-color: #3498db;
-    }
-
-    input[type="submit"],
-    button {
-      background: #3498db;
-      color: #fff;
-      border: none;
-      padding: 14px;
-      width: 100%;
-      margin-top: 10px;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
-    input[type="submit"]:hover,
-    button:hover {
-      background: #2980b9;
-    }
-
-    #mcq-text {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f8f9fa;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      text-align: left;
-      max-height: 300px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-    }
-
-    .progress {
-      margin-top: 10px;
-      display: none;
-      color: #555;
-      font-size: 14px;
-    }
-
-    .download-btn {
-      margin-top: 15px;
-      background: #2ecc71;
-    }
-
-    .download-btn:hover {
-      background: #27ae60;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
@@ -129,47 +33,6 @@
     {% endif %}
   </div>
 
-  <script>
-    const mcq = document.getElementById("mcq-text");
-    const progressMsg = document.getElementById("progress-msg");
-
-    // Show progress message on form submit
-    document.getElementById('pdf-form').addEventListener('submit', function (e) {
-      const fileInput = document.getElementById('pdf');
-      const file = fileInput.files[0];
-      if (file && file.size > 1 * 1024 * 1024) { 
-        e.preventDefault();
-        alert("❌ File size must be less than or equal to 1MB!");
-      } else {
-        progressMsg.style.display = "block";
-      }
-    });
-
-    // Disable right-click on MCQ
-    document.addEventListener("contextmenu", function (e) {
-      if (e.target === mcq || mcq.contains(e.target)) {
-        e.preventDefault();
-        alert("⚠️ Right-click is disabled!");
-      }
-    });
-
-    // Block Ctrl+C
-    document.addEventListener("keydown", function (e) {
-      if ((e.ctrlKey || e.metaKey) && e.key === "c") {
-        if (document.activeElement === mcq || mcq.contains(document.activeElement)) {
-          e.preventDefault();
-          alert("⚠️ Copying is disabled!");
-        }
-      }
-    });
-
-    // Block Ctrl+P
-    document.addEventListener("keydown", function (e) {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
-        e.preventDefault();
-        alert("⚠️ Printing is disabled!");
-      }
-    });
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
